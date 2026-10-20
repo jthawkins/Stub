@@ -655,7 +655,8 @@ async function tmdb(path,params){
   if(!res.ok)throw new Error('http '+res.status);
   return res.json();
 }
-const errMsg=e=>e&&e.message==='nokey'?'Add your TMDB API key in Settings.':e&&e.message==='badkey'?'TMDB rejected the API key. Check it in Settings.':'Couldn\u2019t reach TMDB. Check your connection and try again.';
+const why=e=>e&&/^http /.test(e.message||'')?' (TMDB answered '+e.message.slice(5)+')':' (the request was blocked or never arrived)';
+const errMsg=e=>e&&e.message==='nokey'?'Add your TMDB API key in Settings.':e&&e.message==='badkey'?'TMDB rejected the API key. Check it in Settings.':'Couldn\u2019t reach TMDB'+why(e)+'. Check your connection and try again.';
 function toFilm(r){
   const y=r.release_date?+r.release_date.slice(0,4):null;
   return{id:String(r.id),title:r.title||r.original_title||'Untitled',year:y||null,poster:r.poster_path||null,dir:'',runtime:0,genres:(r.genre_ids||[]).map(g=>GENRE[g]).filter(Boolean),blurb:(r.overview||'').slice(0,320)};
@@ -2158,7 +2159,7 @@ document.addEventListener('click',e=>{
       try{localStorage.setItem(KEY_TMDB,val)}catch(err){ui.keyMsg='This browser blocked saving the key.';renderMain();break}
       ui.keyMsg='Checking the key\u2026';renderMain();
       tmdb('/configuration').then(()=>{ui.keyMsg='Connected. Your key is saved in this browser.';ui.disc=newDisc();if(ui.view==='settings')renderMain();loadDiscover(true)})
-        .catch(err=>{ui.keyMsg=err.message==='badkey'?'TMDB rejected that key. Check that you copied all of it.':'Saved, but we couldn\u2019t reach TMDB to check it.';if(ui.view==='settings')renderMain()});
+        .catch(err=>{ui.keyMsg=err.message==='badkey'?'TMDB rejected that key. Check that you copied all of it.':'Saved, but we couldn\u2019t reach TMDB to check it'+why(err)+'.';if(ui.view==='settings')renderMain()});
       break;
     }
     case 'remove-key':
